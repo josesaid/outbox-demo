@@ -21,8 +21,18 @@ src/main/java/com/mx/development/jose/said/
 ├── simulated/FakeKafka.java        # Simulated topic (a list, with offsets)
 ├── producer/OrderService.java      # Step 1: order + event in one transaction
 ├── producer/OutboxRelay.java       # Step 2: reads the outbox and publishes to Kafka
-└── consumer/PaymentConsumer.java   # Idempotent processing of OrderCreated events
+├── consumer/PaymentConsumer.java   # Idempotent processing of OrderCreated events
+└── diagramas/                      # Flow diagrams as HTML pages (Spanish and English)
 ```
+
+## Diagrams
+
+Two HTML pages show the same diagrams: the full path of one event, the outbox states, and the five scenarios in `Main`.
+
+- English: [workflow-english.html](src/main/java/com/mx/development/jose/said/diagramas/workflow-english.html)
+- Español: [flujo-español.html](src/main/java/com/mx/development/jose/said/diagramas/flujo-espa%C3%B1ol.html)
+
+GitHub shows these files as source code. To see the diagrams, open the file locally in a browser (in IntelliJ: right-click the file, then **Open In → Browser**).
 
 ## How to run
 
