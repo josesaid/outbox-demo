@@ -1,0 +1,19 @@
+# Build output
+out/
+target/
+build/
+*.class
+# IDE
+.idea/
+*.iml
+.vscode/
+# OS
+.DS_Store
+# Environment and secrets
+.env
+*.env
+# Logs and local data
+logs/
+*.log
+coverage/
+_to_delete/
