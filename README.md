@@ -26,12 +26,18 @@ src/main/java/com/mx/development/jose/said/
 
 ## Diagrams
 
-Two pages show the same diagrams: the full path of one event, the outbox states, and the five scenarios in `Main`.
+Each language has an overview page (the full path of one event, the outbox states, and the five scenarios) and one sequence diagram per scenario in `Main`.
 
-- English: https://josesaid.github.io/outbox-demo/diagrams/workflow-english.html
-- Español: https://josesaid.github.io/outbox-demo/diagrams/flujo-espa%C3%B1ol.html
+| Page | English | Español |
+|---|---|---|
+| Overview | [workflow-english](https://josesaid.github.io/outbox-demo/diagrams/english/workflow-english.html) | [flujo-español](https://josesaid.github.io/outbox-demo/diagrams/spanish/flujo-espa%C3%B1ol.html) |
+| A · Normal flow | [scenario-a-normal-flow](https://josesaid.github.io/outbox-demo/diagrams/english/scenario-a-normal-flow.html) | [escenario-a-flujo-normal](https://josesaid.github.io/outbox-demo/diagrams/spanish/escenario-a-flujo-normal.html) |
+| B · Relay crash | [scenario-b-relay-crash](https://josesaid.github.io/outbox-demo/diagrams/english/scenario-b-relay-crash.html) | [escenario-b-caida-del-relay](https://josesaid.github.io/outbox-demo/diagrams/spanish/escenario-b-caida-del-relay.html) |
+| C · Consumer crash | [scenario-c-consumer-crash](https://josesaid.github.io/outbox-demo/diagrams/english/scenario-c-consumer-crash.html) | [escenario-c-caida-del-consumidor](https://josesaid.github.io/outbox-demo/diagrams/spanish/escenario-c-caida-del-consumidor.html) |
+| D · Temporary broker failure | [scenario-d-temporary-broker-failure](https://josesaid.github.io/outbox-demo/diagrams/english/scenario-d-temporary-broker-failure.html) | [escenario-d-falla-temporal-de-kafka](https://josesaid.github.io/outbox-demo/diagrams/spanish/escenario-d-falla-temporal-de-kafka.html) |
+| E · Permanent broker failure | [scenario-e-permanent-broker-failure](https://josesaid.github.io/outbox-demo/diagrams/english/scenario-e-permanent-broker-failure.html) | [escenario-e-falla-permanente-de-kafka](https://josesaid.github.io/outbox-demo/diagrams/spanish/escenario-e-falla-permanente-de-kafka.html) |
 
-The source files live in [`docs/diagrams/`](docs/diagrams/), which GitHub Pages publishes.
+The source files live in [`docs/diagrams/english/`](docs/diagrams/english/) and [`docs/diagrams/spanish/`](docs/diagrams/spanish/), which GitHub Pages publishes.
 
 ## How to run
 

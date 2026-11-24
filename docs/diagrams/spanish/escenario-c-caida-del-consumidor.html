@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Escenario C · Caída del consumidor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: una columna de lectura; cada diagrama en su propia figura con scroll horizontal si no cabe */
+:root {
+  --bg: #f5f7f9;
+  --surface: #ffffff;
+  --ink: #18212b;
+  --muted: #5b6876;
+  --line: #d3dae2;
+  --accent: #2456a6;      /* frontera transaccional */
+  --accent-soft: #e6eefa;
+  --ok: #1f7a4d;   --ok-soft: #e3f3ea;
+  --warn: #a86410; --warn-soft: #fbefdc;
+  --bad: #b3322c;  --bad-soft: #f8e3e1;
+  --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11161c; --surface: #19212a; --ink: #e4e9ef; --muted: #9aa7b5; --line: #33404d;
+    --accent: #7fa8ec; --accent-soft: #1c2a40;
+    --ok: #5cc48f; --ok-soft: #173326;
+    --warn: #e5a54f; --warn-soft: #3a2b15;
+    --bad: #ef7d74; --bad-soft: #3d1f1d;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11161c; --surface: #19212a; --ink: #e4e9ef; --muted: #9aa7b5; --line: #33404d;
+  --accent: #7fa8ec; --accent-soft: #1c2a40;
+  --ok: #5cc48f; --ok-soft: #173326;
+  --warn: #e5a54f; --warn-soft: #3a2b15;
+  --bad: #ef7d74; --bad-soft: #3d1f1d;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 1060px; margin: 0 auto; padding-block: 48px 72px; display: grid; gap: 56px; }
+header { display: grid; gap: 12px; max-width: 68ch; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 5vw, 42px); line-height: 1.1; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.lede { color: var(--muted); font-size: 17px; }
+code { font-family: var(--mono); font-size: .9em; }
+
+section { display: grid; gap: 16px; }
+section > p { max-width: 68ch; color: var(--muted); }
+
+figure { margin: 0; display: grid; gap: 10px; }
+.canvas { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow-x: auto; padding: 16px; }
+.canvas svg { display: block; width: 100%; height: auto; min-width: 760px; color: var(--ink); }
+figcaption { font-size: 14px; color: var(--muted); max-width: 72ch; }
+
+/* SVG styling through page tokens */
+.dg text { font-family: var(--mono); font-size: 12px; fill: var(--ink); }
+.dg .lbl { font-size: 11.5px; fill: var(--muted); }
+.dg .title { font-family: var(--body); font-weight: 600; font-size: 14px; }
+.dg .tx-lbl { font-size: 11px; fill: var(--accent); letter-spacing: .06em; text-transform: uppercase; }
+.dg .box { fill: var(--surface); stroke: var(--ink); stroke-width: 1.4; }
+.dg .tbl { fill: var(--bg); stroke: var(--muted); stroke-width: 1; }
+.dg .tx { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 6 4; }
+.dg .edge { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.dg .edge.soft { stroke: var(--muted); stroke-dasharray: 4 3; }
+.dg .head { fill: var(--ink); }
+.dg .head.soft { fill: var(--muted); }
+.dg .cell { fill: var(--surface); stroke: var(--muted); stroke-width: 1; }
+.dg .cell.dup { fill: var(--warn-soft); stroke: var(--warn); }
+.dg .st { stroke-width: 1.6; }
+.dg .st.n { fill: var(--surface); stroke: var(--ink); }
+.dg .st.ok { fill: var(--ok-soft); stroke: var(--ok); }
+.dg .st.warn { fill: var(--warn-soft); stroke: var(--warn); }
+.dg .st.bad { fill: var(--bad-soft); stroke: var(--bad); }
+.dg .t-ok { fill: var(--ok); font-weight: 500; }
+.dg .t-warn { fill: var(--warn); font-weight: 500; }
+.dg .t-bad { fill: var(--bad); font-weight: 500; }
+
+/* Scenario table */
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14.5px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-family: var(--mono); font-size: 11.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+td.who { font-family: var(--display); font-weight: 600; white-space: nowrap; }
+td.who span { display: block; font-family: var(--mono); font-weight: 400; font-size: 12px; color: var(--muted); }
+.offs { display: flex; gap: 4px; font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.offs b { display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--muted); border-radius: 3px; font-weight: 400; }
+.offs b.dup { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+.offs em { font-style: normal; color: var(--muted); }
+.pill { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 1px 8px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
+.pill.ok { color: var(--ok); background: var(--ok-soft); }
+.pill.warn { color: var(--warn); background: var(--warn-soft); }
+.pill.bad { color: var(--bad); background: var(--bad-soft); }
+
+.result { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; font-family: var(--mono); font-size: 14px; color: var(--muted); }
+.result strong { font-family: var(--display); font-size: 28px; color: var(--ink); font-weight: 600; }
+
+/* Sequence diagrams */
+.canvas svg.seq { min-width: 1020px; }
+.dg .life { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; }
+.dg .edge.bad { stroke: var(--bad); }
+.dg .edge.bad.soft { stroke: var(--bad); stroke-dasharray: 4 3; }
+.dg .head.bad { fill: var(--bad); }
+.dg .ml { font-size: 11.5px; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.dg .ml.soft { fill: var(--muted); }
+.dg .ml.bad { fill: var(--bad); }
+.dg .ml.ok { fill: var(--ok); }
+.dg .phase { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
+.dg .phase-t { font-family: var(--body); font-weight: 600; font-size: 12.5px; fill: var(--ink); }
+.dg .frame { fill: none; stroke: var(--accent); stroke-width: 1.3; stroke-dasharray: 6 4; }
+.dg .frame.alt { stroke: var(--warn); }
+.dg .tag { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1; }
+.dg .tag.alt { fill: var(--warn-soft); stroke: var(--warn); }
+.dg .tag-t { font-size: 10.5px; fill: var(--accent); letter-spacing: .05em; text-transform: uppercase; }
+.dg .tag-t.alt { fill: var(--warn); }
+.dg .x { stroke: var(--bad); stroke-width: 2.4; }
+nav.scen { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 13px; }
+nav.scen a { color: var(--ink); text-decoration: none; border: 1px solid var(--line); background: var(--surface); padding: 4px 10px; border-radius: 4px; }
+nav.scen a[aria-current="page"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+nav.scen a:hover { border-color: var(--accent); }
+ul.points { margin: 0; padding-left: 20px; max-width: 72ch; display: grid; gap: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="eyebrow">outbox-demo · diagrama de secuencia</span>
+    <h1>Escenario C · Caída del consumidor</h1>
+    <p class="lede">El consumidor hace commit en la base y se cae antes de confirmar el offset. Kafka vuelve a entregar el mensaje y el consumidor lo ignora.</p>
+  </header>
+  <nav class="scen"><a href="flujo-español.html">Vista general</a><a href="escenario-a-flujo-normal.html">A</a><a href="escenario-b-caida-del-relay.html">B</a><a href="escenario-c-caida-del-consumidor.html" aria-current="page">C</a><a href="escenario-d-falla-temporal-de-kafka.html">D</a><a href="escenario-e-falla-permanente-de-kafka.html">E</a><a href="../english/scenario-c-consumer-crash.html" lang="en">English</a></nav>
+  <section>
+    <figure>
+      <div class="canvas">
+<svg class="dg seq" viewBox="0 0 1080 1524" role="img" aria-label="Escenario C · Caída del consumidor: El consumidor hace commit en la base y se cae antes de confirmar el offset. Kafka vuelve a entregar el mensaje y el consumidor lo ignora.">
+<defs>
+<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0 L10 5 L0 10 z"/></marker>
+<marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head soft" d="M0 0 L10 5 L0 10 z"/></marker>
+<marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0 0 L10 5 L0 10 z"/></marker>
+</defs>
+<line class="life" x1="90" y1="66" x2="90" y2="1524"/>
+<line class="life" x1="270" y1="66" x2="270" y2="1524"/>
+<line class="life" x1="450" y1="66" x2="450" y2="1524"/>
+<line class="life" x1="630" y1="66" x2="630" y2="1524"/>
+<line class="life" x1="810" y1="66" x2="810" y2="1524"/>
+<line class="life" x1="990" y1="66" x2="990" y2="1524"/>
+<rect class="frame" x="200" y="140" width="500" height="88" rx="5"/><rect class="tag" x="200" y="140" width="101.8" height="18" rx="3"/><text class="tag-t" x="208" y="153">1 transacción</text>
+<rect class="frame" x="560" y="726" width="500" height="190" rx="5"/><rect class="tag" x="560" y="726" width="101.8" height="18" rx="3"/><text class="tag-t" x="568" y="739">1 transacción</text>
+<rect class="frame alt" x="560" y="1220" width="500" height="156" rx="5"/><rect class="tag alt" x="560" y="1220" width="115.0" height="18" rx="3"/><text class="tag-t alt" x="568" y="1233">alt · duplicado</text>
+<rect class="box" x="8" y="14" width="164" height="52" rx="4"/><text class="title" x="90" y="36" text-anchor="middle">Main</text><text class="lbl" x="90" y="54" text-anchor="middle">escenarios</text>
+<rect class="box" x="188" y="14" width="164" height="52" rx="4"/><text class="title" x="270" y="36" text-anchor="middle">OrderService</text><text class="lbl" x="270" y="54" text-anchor="middle">createOrder()</text>
+<rect class="box" x="368" y="14" width="164" height="52" rx="4"/><text class="title" x="450" y="36" text-anchor="middle">OutboxRelay</text><text class="lbl" x="450" y="54" text-anchor="middle">publishPendingEvents()</text>
+<rect class="box" x="548" y="14" width="164" height="52" rx="4"/><text class="title" x="630" y="36" text-anchor="middle">FakeDatabase</text><text class="lbl" x="630" y="54" text-anchor="middle">BD simulada</text>
+<rect class="box" x="728" y="14" width="164" height="52" rx="4"/><text class="title" x="810" y="36" text-anchor="middle">FakeKafka</text><text class="lbl" x="810" y="54" text-anchor="middle">orders.events</text>
+<rect class="box" x="908" y="14" width="164" height="52" rx="4"/><text class="title" x="990" y="36" text-anchor="middle">PaymentConsumer</text><text class="lbl" x="990" y="54" text-anchor="middle">handle(offset)</text>
+<line class="edge" x1="90" y1="122" x2="268" y2="122" marker-end="url(#ah)"/>
+<text class="ml" x="180.0" y="115" text-anchor="middle">createOrder(&quot;Carol&quot;)</text>
+<line class="edge" x1="270" y1="178" x2="628" y2="178" marker-end="url(#ah)"/>
+<text class="ml" x="450.0" y="171" text-anchor="middle">INSERT orders + outbox (NEW)</text>
+<line class="edge" x1="270" y1="212" x2="628" y2="212" marker-end="url(#ah)"/>
+<text class="ml" x="450.0" y="205" text-anchor="middle">COMMIT</text>
+<line class="edge soft" x1="270" y1="258" x2="92" y2="258" marker-end="url(#ahs)"/>
+<text class="ml soft" x="180.0" y="251" text-anchor="middle">orderId</text>
+<rect class="phase" x="10" y="271" width="1060" height="24" rx="3"/>
+<text class="phase-t" x="22" y="288">El relay publica</text>
+<line class="edge" x1="90" y1="326" x2="448" y2="326" marker-end="url(#ah)"/>
+<text class="ml" x="270.0" y="319" text-anchor="middle">publishPendingEvents()</text>
+<line class="edge" x1="450" y1="360" x2="628" y2="360" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="353" text-anchor="middle">SELECT pendientes</text>
+<line class="edge soft" x1="630" y1="394" x2="452" y2="394" marker-end="url(#ahs)"/>
+<text class="ml soft" x="540.0" y="387" text-anchor="middle">1 evento (NEW)</text>
+<line class="edge" x1="450" y1="428" x2="628" y2="428" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="421" text-anchor="middle">UPDATE status=PROCESSING</text>
+<line class="edge" x1="450" y1="462" x2="808" y2="462" marker-end="url(#ah)"/>
+<text class="ml" x="630.0" y="455" text-anchor="middle">send(key=orderId, eventId)</text>
+<rect class="st n" x="730" y="478" width="160" height="28" rx="4"/>
+<text class="" x="810.0" y="498" text-anchor="middle">offset 3</text>
+<line class="edge" x1="450" y1="538" x2="628" y2="538" marker-end="url(#ah)"/>
+<text class="ml ok" x="540.0" y="531" text-anchor="middle">UPDATE status=SENT</text>
+<rect class="phase" x="10" y="551" width="1060" height="24" rx="3"/>
+<text class="phase-t" x="22" y="568">Primera entrega: commit en BD y caída</text>
+<line class="edge" x1="90" y1="606" x2="988" y2="606" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="599" text-anchor="middle">setSimulateCrashBeforeOffsetCommit(true)</text>
+<line class="edge" x1="90" y1="640" x2="988" y2="640" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="633" text-anchor="middle">handle(3)</text>
+<line class="edge" x1="990" y1="674" x2="812" y2="674" marker-end="url(#ah)"/>
+<text class="ml" x="900.0" y="667" text-anchor="middle">read(3)</text>
+<line class="edge soft" x1="810" y1="708" x2="988" y2="708" marker-end="url(#ahs)"/>
+<text class="ml soft" x="900.0" y="701" text-anchor="middle">record(key, eventId)</text>
+<line class="edge" x1="990" y1="764" x2="632" y2="764" marker-end="url(#ah)"/>
+<text class="ml" x="810.0" y="757" text-anchor="middle">BEGIN TRANSACTION</text>
+<line class="edge" x1="990" y1="798" x2="632" y2="798" marker-end="url(#ah)"/>
+<text class="ml" x="810.0" y="791" text-anchor="middle">INSERT processed_events</text>
+<line class="edge soft" x1="630" y1="832" x2="988" y2="832" marker-end="url(#ahs)"/>
+<text class="ml soft" x="810.0" y="825" text-anchor="middle">true (nuevo)</text>
+<line class="edge" x1="990" y1="866" x2="632" y2="866" marker-end="url(#ah)"/>
+<text class="ml" x="810.0" y="859" text-anchor="middle">INSERT payments (PENDING)</text>
+<line class="edge" x1="990" y1="900" x2="632" y2="900" marker-end="url(#ah)"/>
+<text class="ml ok" x="810.0" y="893" text-anchor="middle">COMMIT</text>
+<path class="edge bad" d="M990 930 H1024 V952 H993" marker-end="url(#ahb)"/>
+<text class="ml bad" x="1032" y="945">CRASH antes del commit del offset</text>
+<path class="x" d="M983 953 L997 967 M997 953 L983 967"/>
+<line class="edge bad soft" x1="990" y1="990" x2="92" y2="990" marker-end="url(#ahb)"/>
+<text class="ml bad" x="540.0" y="983" text-anchor="middle">RuntimeException: Simulated consumer crash</text>
+<rect class="st warn" x="714.6" y="1006" width="190.79999999999995" height="28" rx="4"/>
+<text class="t-warn" x="810.0" y="1026" text-anchor="middle">offset 3 sin confirmar</text>
+<rect class="phase" x="10" y="1045" width="1060" height="24" rx="3"/>
+<text class="phase-t" x="22" y="1062">Kafka vuelve a entregar el offset 3</text>
+<line class="edge" x1="90" y1="1100" x2="988" y2="1100" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="1093" text-anchor="middle">setSimulateCrashBeforeOffsetCommit(false)</text>
+<line class="edge" x1="90" y1="1134" x2="988" y2="1134" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="1127" text-anchor="middle">handle(3)</text>
+<line class="edge" x1="990" y1="1168" x2="812" y2="1168" marker-end="url(#ah)"/>
+<text class="ml" x="900.0" y="1161" text-anchor="middle">read(3)</text>
+<line class="edge soft" x1="810" y1="1202" x2="988" y2="1202" marker-end="url(#ahs)"/>
+<text class="ml soft" x="900.0" y="1195" text-anchor="middle">mismo eventId</text>
+<line class="edge" x1="990" y1="1258" x2="632" y2="1258" marker-end="url(#ah)"/>
+<text class="ml" x="810.0" y="1251" text-anchor="middle">BEGIN TRANSACTION</text>
+<line class="edge" x1="990" y1="1292" x2="632" y2="1292" marker-end="url(#ah)"/>
+<text class="ml" x="810.0" y="1285" text-anchor="middle">INSERT processed_events</text>
+<line class="edge bad soft" x1="630" y1="1326" x2="988" y2="1326" marker-end="url(#ahb)"/>
+<text class="ml bad" x="810.0" y="1319" text-anchor="middle">false: duplicate key</text>
+<line class="edge" x1="990" y1="1360" x2="632" y2="1360" marker-end="url(#ah)"/>
+<text class="ml" x="810.0" y="1353" text-anchor="middle">ROLLBACK</text>
+<line class="edge" x1="990" y1="1406" x2="812" y2="1406" marker-end="url(#ah)"/>
+<text class="ml ok" x="900.0" y="1399" text-anchor="middle">commit offset 3</text>
+<rect class="st warn" x="888.5999999999999" y="1422" width="183.4000000000001" height="28" rx="4"/>
+<text class="t-warn" x="980.3" y="1442" text-anchor="middle">SKIP: no se crea pago</text>
+<rect class="st ok" x="10" y="1464" width="1060" height="28" rx="4"/>
+<text class="t-ok" x="540.0" y="1484" text-anchor="middle">Resultado: 1 pago para Carol, sin segundo pago</text>
+</svg>
+      </div>
+      <figcaption>Flechas sólidas: llamadas. Punteadas: respuestas. Rojas: errores y caídas. Recuadros azules punteados: transacciones de base de datos; ámbar: la rama del duplicado.</figcaption>
+    </figure>
+  </section>
+  <section>
+    <h2>Qué observar</h2>
+    <ul class="points"><li>El commit en BD ya incluye la fila de <code>processed_events</code> y el pago.</li><li>Como el offset 3 no se confirmó, Kafka lo entrega de nuevo tras el reinicio.</li><li>La re-entrega encuentra el <code>eventId</code> y hace SKIP: no hay segundo pago.</li></ul>
+  </section>
+</main>
+</body>
+</html>

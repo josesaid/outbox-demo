@@ -39,7 +39,7 @@ footer{margin-top:48px;color:var(--muted);font-size:.85rem;border-top:1px solid 
 <div class="links">
 <a href="https://github.com/josesaid/outbox-demo">Source on GitHub</a>
 <a href="https://josesaid.github.io/">All projects</a>
-<a href="diagrams/workflow-english.html">Flow diagrams</a>
+<a href="diagrams/english/workflow-english.html">Flow diagrams</a>
 </div>
 
 <h2>Stack</h2>
@@ -76,11 +76,19 @@ java -cp out com.mx.development.jose.said.Main</pre>
                          └──► DEAD   (attempts = MAX_ATTEMPTS = 3)</pre>
 
 <h2>Diagrams</h2>
-<p>The full path of one event, the outbox states, and the five scenarios, drawn on one page.</p>
+<p>An overview page (the full path of one event, the outbox states, and the five scenarios) plus one sequence diagram per scenario, in English and Spanish.</p>
 <ul>
-<li><a href="diagrams/workflow-english.html">Outbox workflow (English)</a></li>
-<li><a href="diagrams/flujo-espa%C3%B1ol.html">Flujo del outbox (español)</a></li>
+<li><a href="diagrams/english/workflow-english.html">Outbox workflow (English)</a></li>
+<li><a href="diagrams/spanish/flujo-espa%C3%B1ol.html">Flujo del outbox (español)</a></li>
 </ul>
+<div class="wrap"><table>
+<tr><th>Scenario</th><th>English</th><th>Español</th></tr>
+<tr><td>A · Normal flow</td><td><a href="diagrams/english/scenario-a-normal-flow.html">Sequence diagram</a></td><td><a href="diagrams/spanish/escenario-a-flujo-normal.html">Diagrama de secuencia</a></td></tr>
+<tr><td>B · Relay crash</td><td><a href="diagrams/english/scenario-b-relay-crash.html">Sequence diagram</a></td><td><a href="diagrams/spanish/escenario-b-caida-del-relay.html">Diagrama de secuencia</a></td></tr>
+<tr><td>C · Consumer crash</td><td><a href="diagrams/english/scenario-c-consumer-crash.html">Sequence diagram</a></td><td><a href="diagrams/spanish/escenario-c-caida-del-consumidor.html">Diagrama de secuencia</a></td></tr>
+<tr><td>D · Temporary broker failure</td><td><a href="diagrams/english/scenario-d-temporary-broker-failure.html">Sequence diagram</a></td><td><a href="diagrams/spanish/escenario-d-falla-temporal-de-kafka.html">Diagrama de secuencia</a></td></tr>
+<tr><td>E · Permanent broker failure</td><td><a href="diagrams/english/scenario-e-permanent-broker-failure.html">Sequence diagram</a></td><td><a href="diagrams/spanish/escenario-e-falla-permanente-de-kafka.html">Diagrama de secuencia</a></td></tr>
+</table></div>
 
 <h2>Key ideas</h2>
 <ul>

@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scenario E · Permanent broker failure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: una columna de lectura; cada diagrama en su propia figura con scroll horizontal si no cabe */
+:root {
+  --bg: #f5f7f9;
+  --surface: #ffffff;
+  --ink: #18212b;
+  --muted: #5b6876;
+  --line: #d3dae2;
+  --accent: #2456a6;      /* frontera transaccional */
+  --accent-soft: #e6eefa;
+  --ok: #1f7a4d;   --ok-soft: #e3f3ea;
+  --warn: #a86410; --warn-soft: #fbefdc;
+  --bad: #b3322c;  --bad-soft: #f8e3e1;
+  --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11161c; --surface: #19212a; --ink: #e4e9ef; --muted: #9aa7b5; --line: #33404d;
+    --accent: #7fa8ec; --accent-soft: #1c2a40;
+    --ok: #5cc48f; --ok-soft: #173326;
+    --warn: #e5a54f; --warn-soft: #3a2b15;
+    --bad: #ef7d74; --bad-soft: #3d1f1d;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11161c; --surface: #19212a; --ink: #e4e9ef; --muted: #9aa7b5; --line: #33404d;
+  --accent: #7fa8ec; --accent-soft: #1c2a40;
+  --ok: #5cc48f; --ok-soft: #173326;
+  --warn: #e5a54f; --warn-soft: #3a2b15;
+  --bad: #ef7d74; --bad-soft: #3d1f1d;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 1060px; margin: 0 auto; padding-block: 48px 72px; display: grid; gap: 56px; }
+header { display: grid; gap: 12px; max-width: 68ch; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 5vw, 42px); line-height: 1.1; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.lede { color: var(--muted); font-size: 17px; }
+code { font-family: var(--mono); font-size: .9em; }
+
+section { display: grid; gap: 16px; }
+section > p { max-width: 68ch; color: var(--muted); }
+
+figure { margin: 0; display: grid; gap: 10px; }
+.canvas { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow-x: auto; padding: 16px; }
+.canvas svg { display: block; width: 100%; height: auto; min-width: 760px; color: var(--ink); }
+figcaption { font-size: 14px; color: var(--muted); max-width: 72ch; }
+
+/* SVG styling through page tokens */
+.dg text { font-family: var(--mono); font-size: 12px; fill: var(--ink); }
+.dg .lbl { font-size: 11.5px; fill: var(--muted); }
+.dg .title { font-family: var(--body); font-weight: 600; font-size: 14px; }
+.dg .tx-lbl { font-size: 11px; fill: var(--accent); letter-spacing: .06em; text-transform: uppercase; }
+.dg .box { fill: var(--surface); stroke: var(--ink); stroke-width: 1.4; }
+.dg .tbl { fill: var(--bg); stroke: var(--muted); stroke-width: 1; }
+.dg .tx { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 6 4; }
+.dg .edge { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.dg .edge.soft { stroke: var(--muted); stroke-dasharray: 4 3; }
+.dg .head { fill: var(--ink); }
+.dg .head.soft { fill: var(--muted); }
+.dg .cell { fill: var(--surface); stroke: var(--muted); stroke-width: 1; }
+.dg .cell.dup { fill: var(--warn-soft); stroke: var(--warn); }
+.dg .st { stroke-width: 1.6; }
+.dg .st.n { fill: var(--surface); stroke: var(--ink); }
+.dg .st.ok { fill: var(--ok-soft); stroke: var(--ok); }
+.dg .st.warn { fill: var(--warn-soft); stroke: var(--warn); }
+.dg .st.bad { fill: var(--bad-soft); stroke: var(--bad); }
+.dg .t-ok { fill: var(--ok); font-weight: 500; }
+.dg .t-warn { fill: var(--warn); font-weight: 500; }
+.dg .t-bad { fill: var(--bad); font-weight: 500; }
+
+/* Scenario table */
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14.5px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-family: var(--mono); font-size: 11.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+td.who { font-family: var(--display); font-weight: 600; white-space: nowrap; }
+td.who span { display: block; font-family: var(--mono); font-weight: 400; font-size: 12px; color: var(--muted); }
+.offs { display: flex; gap: 4px; font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.offs b { display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--muted); border-radius: 3px; font-weight: 400; }
+.offs b.dup { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+.offs em { font-style: normal; color: var(--muted); }
+.pill { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 1px 8px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
+.pill.ok { color: var(--ok); background: var(--ok-soft); }
+.pill.warn { color: var(--warn); background: var(--warn-soft); }
+.pill.bad { color: var(--bad); background: var(--bad-soft); }
+
+.result { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; font-family: var(--mono); font-size: 14px; color: var(--muted); }
+.result strong { font-family: var(--display); font-size: 28px; color: var(--ink); font-weight: 600; }
+
+/* Sequence diagrams */
+.canvas svg.seq { min-width: 1020px; }
+.dg .life { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; }
+.dg .edge.bad { stroke: var(--bad); }
+.dg .edge.bad.soft { stroke: var(--bad); stroke-dasharray: 4 3; }
+.dg .head.bad { fill: var(--bad); }
+.dg .ml { font-size: 11.5px; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.dg .ml.soft { fill: var(--muted); }
+.dg .ml.bad { fill: var(--bad); }
+.dg .ml.ok { fill: var(--ok); }
+.dg .phase { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
+.dg .phase-t { font-family: var(--body); font-weight: 600; font-size: 12.5px; fill: var(--ink); }
+.dg .frame { fill: none; stroke: var(--accent); stroke-width: 1.3; stroke-dasharray: 6 4; }
+.dg .frame.alt { stroke: var(--warn); }
+.dg .tag { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1; }
+.dg .tag.alt { fill: var(--warn-soft); stroke: var(--warn); }
+.dg .tag-t { font-size: 10.5px; fill: var(--accent); letter-spacing: .05em; text-transform: uppercase; }
+.dg .tag-t.alt { fill: var(--warn); }
+.dg .x { stroke: var(--bad); stroke-width: 2.4; }
+nav.scen { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 13px; }
+nav.scen a { color: var(--ink); text-decoration: none; border: 1px solid var(--line); background: var(--surface); padding: 4px 10px; border-radius: 4px; }
+nav.scen a[aria-current="page"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+nav.scen a:hover { border-color: var(--accent); }
+ul.points { margin: 0; padding-left: 20px; max-width: 72ch; display: grid; gap: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="eyebrow">outbox-demo · sequence diagram</span>
+    <h1>Scenario E · Permanent broker failure</h1>
+    <p class="lede">Kafka keeps failing. On the third attempt the event moves to DEAD and the relay stops retrying it.</p>
+  </header>
+  <nav class="scen"><a href="workflow-english.html">Overview</a><a href="scenario-a-normal-flow.html">A</a><a href="scenario-b-relay-crash.html">B</a><a href="scenario-c-consumer-crash.html">C</a><a href="scenario-d-temporary-broker-failure.html">D</a><a href="scenario-e-permanent-broker-failure.html" aria-current="page">E</a><a href="../spanish/escenario-e-falla-permanente-de-kafka.html" lang="es">Español</a></nav>
+  <section>
+    <figure>
+      <div class="canvas">
+<svg class="dg seq" viewBox="0 0 1080 1660" role="img" aria-label="Scenario E · Permanent broker failure: Kafka keeps failing. On the third attempt the event moves to DEAD and the relay stops retrying it.">
+<defs>
+<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0 L10 5 L0 10 z"/></marker>
+<marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head soft" d="M0 0 L10 5 L0 10 z"/></marker>
+<marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0 0 L10 5 L0 10 z"/></marker>
+</defs>
+<line class="life" x1="90" y1="66" x2="90" y2="1660"/>
+<line class="life" x1="270" y1="66" x2="270" y2="1660"/>
+<line class="life" x1="450" y1="66" x2="450" y2="1660"/>
+<line class="life" x1="630" y1="66" x2="630" y2="1660"/>
+<line class="life" x1="810" y1="66" x2="810" y2="1660"/>
+<line class="life" x1="990" y1="66" x2="990" y2="1660"/>
+<rect class="frame" x="200" y="140" width="500" height="88" rx="5"/><rect class="tag" x="200" y="140" width="101.8" height="18" rx="3"/><text class="tag-t" x="208" y="153">1 transaction</text>
+<rect class="box" x="8" y="14" width="164" height="52" rx="4"/><text class="title" x="90" y="36" text-anchor="middle">Main</text><text class="lbl" x="90" y="54" text-anchor="middle">scenarios</text>
+<rect class="box" x="188" y="14" width="164" height="52" rx="4"/><text class="title" x="270" y="36" text-anchor="middle">OrderService</text><text class="lbl" x="270" y="54" text-anchor="middle">createOrder()</text>
+<rect class="box" x="368" y="14" width="164" height="52" rx="4"/><text class="title" x="450" y="36" text-anchor="middle">OutboxRelay</text><text class="lbl" x="450" y="54" text-anchor="middle">publishPendingEvents()</text>
+<rect class="box" x="548" y="14" width="164" height="52" rx="4"/><text class="title" x="630" y="36" text-anchor="middle">FakeDatabase</text><text class="lbl" x="630" y="54" text-anchor="middle">simulated DB</text>
+<rect class="box" x="728" y="14" width="164" height="52" rx="4"/><text class="title" x="810" y="36" text-anchor="middle">FakeKafka</text><text class="lbl" x="810" y="54" text-anchor="middle">orders.events</text>
+<rect class="box" x="908" y="14" width="164" height="52" rx="4"/><text class="title" x="990" y="36" text-anchor="middle">PaymentConsumer</text><text class="lbl" x="990" y="54" text-anchor="middle">handle(offset)</text>
+<line class="edge" x1="90" y1="122" x2="268" y2="122" marker-end="url(#ah)"/>
+<text class="ml" x="180.0" y="115" text-anchor="middle">createOrder(&quot;Eve&quot;)</text>
+<line class="edge" x1="270" y1="178" x2="628" y2="178" marker-end="url(#ah)"/>
+<text class="ml" x="450.0" y="171" text-anchor="middle">INSERT orders + outbox (NEW)</text>
+<line class="edge" x1="270" y1="212" x2="628" y2="212" marker-end="url(#ah)"/>
+<text class="ml" x="450.0" y="205" text-anchor="middle">COMMIT</text>
+<line class="edge soft" x1="270" y1="258" x2="92" y2="258" marker-end="url(#ahs)"/>
+<text class="ml soft" x="180.0" y="251" text-anchor="middle">orderId</text>
+<line class="edge" x1="90" y1="292" x2="808" y2="292" marker-end="url(#ah)"/>
+<text class="ml" x="450.0" y="285" text-anchor="middle">setFailuresToSimulate(100)</text>
+<rect class="phase" x="10" y="305" width="1060" height="24" rx="3"/>
+<text class="phase-t" x="22" y="322">Relay run 1</text>
+<line class="edge" x1="90" y1="360" x2="448" y2="360" marker-end="url(#ah)"/>
+<text class="ml" x="270.0" y="353" text-anchor="middle">publishPendingEvents()</text>
+<line class="edge" x1="450" y1="394" x2="628" y2="394" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="387" text-anchor="middle">SELECT pending</text>
+<line class="edge soft" x1="630" y1="428" x2="452" y2="428" marker-end="url(#ahs)"/>
+<text class="ml soft" x="540.0" y="421" text-anchor="middle">1 event (NEW)</text>
+<line class="edge" x1="450" y1="462" x2="628" y2="462" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="455" text-anchor="middle">UPDATE status=PROCESSING</text>
+<line class="edge" x1="450" y1="496" x2="808" y2="496" marker-end="url(#ah)"/>
+<text class="ml" x="630.0" y="489" text-anchor="middle">send(key=orderId, eventId)</text>
+<line class="edge bad soft" x1="810" y1="530" x2="452" y2="530" marker-end="url(#ahb)"/>
+<text class="ml bad" x="630.0" y="523" text-anchor="middle">RuntimeException: Broker unavailable</text>
+<line class="edge" x1="450" y1="564" x2="628" y2="564" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="557" text-anchor="middle">UPDATE FAILED, attempts=1</text>
+<line class="edge soft" x1="630" y1="598" x2="452" y2="598" marker-end="url(#ahs)"/>
+<text class="ml soft" x="540.0" y="591" text-anchor="middle">attempts=1</text>
+<rect class="st warn" x="339.8" y="614" width="220.40000000000003" height="28" rx="4"/>
+<text class="t-warn" x="450.0" y="634" text-anchor="middle">retry on next run (1 of 3)</text>
+<rect class="phase" x="10" y="653" width="1060" height="24" rx="3"/>
+<text class="phase-t" x="22" y="670">Relay run 2</text>
+<line class="edge" x1="90" y1="708" x2="448" y2="708" marker-end="url(#ah)"/>
+<text class="ml" x="270.0" y="701" text-anchor="middle">publishPendingEvents()</text>
+<line class="edge" x1="450" y1="742" x2="628" y2="742" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="735" text-anchor="middle">SELECT pending</text>
+<line class="edge soft" x1="630" y1="776" x2="452" y2="776" marker-end="url(#ahs)"/>
+<text class="ml soft" x="540.0" y="769" text-anchor="middle">1 event (FAILED)</text>
+<line class="edge" x1="450" y1="810" x2="628" y2="810" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="803" text-anchor="middle">UPDATE status=PROCESSING</text>
+<line class="edge" x1="450" y1="844" x2="808" y2="844" marker-end="url(#ah)"/>
+<text class="ml" x="630.0" y="837" text-anchor="middle">send(key=orderId, eventId)</text>
+<line class="edge bad soft" x1="810" y1="878" x2="452" y2="878" marker-end="url(#ahb)"/>
+<text class="ml bad" x="630.0" y="871" text-anchor="middle">RuntimeException: Broker unavailable</text>
+<line class="edge" x1="450" y1="912" x2="628" y2="912" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="905" text-anchor="middle">UPDATE FAILED, attempts=2</text>
+<line class="edge soft" x1="630" y1="946" x2="452" y2="946" marker-end="url(#ahs)"/>
+<text class="ml soft" x="540.0" y="939" text-anchor="middle">attempts=2</text>
+<rect class="st warn" x="339.8" y="962" width="220.40000000000003" height="28" rx="4"/>
+<text class="t-warn" x="450.0" y="982" text-anchor="middle">retry on next run (2 of 3)</text>
+<rect class="phase" x="10" y="1001" width="1060" height="24" rx="3"/>
+<text class="phase-t" x="22" y="1018">Relay run 3</text>
+<line class="edge" x1="90" y1="1056" x2="448" y2="1056" marker-end="url(#ah)"/>
+<text class="ml" x="270.0" y="1049" text-anchor="middle">publishPendingEvents()</text>
+<line class="edge" x1="450" y1="1090" x2="628" y2="1090" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="1083" text-anchor="middle">SELECT pending</text>
+<line class="edge soft" x1="630" y1="1124" x2="452" y2="1124" marker-end="url(#ahs)"/>
+<text class="ml soft" x="540.0" y="1117" text-anchor="middle">1 event (FAILED)</text>
+<line class="edge" x1="450" y1="1158" x2="628" y2="1158" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="1151" text-anchor="middle">UPDATE status=PROCESSING</text>
+<line class="edge" x1="450" y1="1192" x2="808" y2="1192" marker-end="url(#ah)"/>
+<text class="ml" x="630.0" y="1185" text-anchor="middle">send(key=orderId, eventId)</text>
+<line class="edge bad soft" x1="810" y1="1226" x2="452" y2="1226" marker-end="url(#ahb)"/>
+<text class="ml bad" x="630.0" y="1219" text-anchor="middle">RuntimeException: Broker unavailable</text>
+<line class="edge" x1="450" y1="1260" x2="628" y2="1260" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="1253" text-anchor="middle">UPDATE FAILED, attempts=3</text>
+<line class="edge soft" x1="630" y1="1294" x2="452" y2="1294" marker-end="url(#ahs)"/>
+<text class="ml soft" x="540.0" y="1287" text-anchor="middle">attempts=3</text>
+<path class="edge bad" d="M450 1312 H484 V1334 H453" marker-end="url(#ahb)"/>
+<text class="ml bad" x="492" y="1327">attempts ≥ MAX_ATTEMPTS (3): give up</text>
+<line class="edge bad" x1="450" y1="1372" x2="628" y2="1372" marker-end="url(#ahb)"/>
+<text class="ml bad" x="540.0" y="1365" text-anchor="middle">UPDATE status=DEAD</text>
+<rect class="phase" x="10" y="1385" width="1060" height="24" rx="3"/>
+<text class="phase-t" x="22" y="1402">Relay run 4: nothing pending</text>
+<line class="edge" x1="90" y1="1440" x2="448" y2="1440" marker-end="url(#ah)"/>
+<text class="ml" x="270.0" y="1433" text-anchor="middle">publishPendingEvents()</text>
+<line class="edge" x1="450" y1="1474" x2="628" y2="1474" marker-end="url(#ah)"/>
+<text class="ml" x="540.0" y="1467" text-anchor="middle">SELECT pending</text>
+<line class="edge soft" x1="630" y1="1508" x2="452" y2="1508" marker-end="url(#ahs)"/>
+<text class="ml soft" x="540.0" y="1501" text-anchor="middle">0 events (DEAD is not retried)</text>
+<rect class="st n" x="369.4" y="1524" width="161.20000000000005" height="28" rx="4"/>
+<text class="" x="450.0" y="1544" text-anchor="middle">nothing to publish</text>
+<line class="edge" x1="90" y1="1584" x2="808" y2="1584" marker-end="url(#ah)"/>
+<text class="ml" x="450.0" y="1577" text-anchor="middle">setFailuresToSimulate(0)</text>
+<rect class="st bad" x="10" y="1600" width="1060" height="28" rx="4"/>
+<text class="t-bad" x="540.0" y="1620" text-anchor="middle">Result: Kafka is back, but the event is already DEAD; no payment for Eve</text>
+</svg>
+      </div>
+      <figcaption>Solid arrows: calls. Dashed: replies. Red: errors and crashes. Dashed blue boxes: database transactions; amber: the duplicate branch.</figcaption>
+    </figure>
+  </section>
+  <section>
+    <h2>What to look for</h2>
+    <ul class="points"><li><code>MAX_ATTEMPTS = 3</code> in <code>OutboxRelay</code>: once reached, the event is marked <code>DEAD</code>.</li><li>The fourth run finds nothing: <code>DEAD</code> is not a pending state.</li><li>The message never reaches Kafka, so the consumer never runs and there is no payment.</li></ul>
+  </section>
+</main>
+</body>
+</html>
