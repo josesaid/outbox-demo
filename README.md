@@ -32,7 +32,10 @@ Two HTML pages show the same diagrams: the full path of one event, the outbox st
 - English: [workflow-english.html](src/main/java/com/mx/development/jose/said/diagramas/workflow-english.html)
 - Español: [flujo-español.html](src/main/java/com/mx/development/jose/said/diagramas/flujo-espa%C3%B1ol.html)
 
-GitHub shows these files as source code. To see the diagrams, open the file locally in a browser (in IntelliJ: right-click the file, then **Open In → Browser**).
+GitHub shows these files as source code. To see the rendered diagrams, open them on the project page:
+
+- English: https://josesaid.github.io/outbox-demo/diagrams/workflow-english.html
+- Español: https://josesaid.github.io/outbox-demo/diagrams/flujo-espa%C3%B1ol.html
 
 ## How to run
 
